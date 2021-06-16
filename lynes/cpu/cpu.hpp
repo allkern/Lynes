@@ -1,6 +1,7 @@
 #pragma once
 
 #include "opcode_table.hpp"
+#include "interrupts.hpp"
 #include "registers.hpp"
 #include "bus.hpp"
 
@@ -14,6 +15,10 @@ namespace nes {
         void init() {
             p = 0x00;
             sp = 0xfd;
+
+            irq.value   = true;  irq.prev   = irq.value;
+            nmi.value   = true;  nmi.prev   = nmi.value;
+            reset.value = false; reset.prev = reset.value;
         }
 
         void fetch() {
@@ -33,6 +38,7 @@ namespace nes {
         void cycle() {
             fetch();
             execute();
+            handle_interrupts();
         }
     }
 }

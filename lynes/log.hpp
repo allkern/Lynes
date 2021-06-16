@@ -51,7 +51,8 @@ namespace _log {
 
         if (file.is_open()) {
             std::string tstr(t), l = tstr.substr(tstr.find_last_of('['), 3) + " ";
-            file << l << buf << std::endl;
+            //file << l << buf << std::endl;
+            file << buf << std::endl;
         }
     }
 

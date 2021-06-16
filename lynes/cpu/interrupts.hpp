@@ -2,7 +2,8 @@
 
 #include "registers.hpp"
 #include "stack.hpp"
-#include "bus.hpp"
+
+#include "../bus.hpp"
 
 namespace nes {
     namespace cpu {
@@ -20,14 +21,16 @@ namespace nes {
             a = 0;
             x = 0;
             y = 0;
-            p = BF;
+            p = 0x24;
             sp = 0xfd;
 
             opcode = 0x0;
             operand = 0x0;
 
-            last_cycles = 8;
+            last_cycles = 7;
             cycles_elapsed += last_cycles;
+
+            reset.value = true;
         }
     
         void handle_interrupts() {
@@ -37,7 +40,7 @@ namespace nes {
                 set_flags(0b00010000, false);
                 set_flags(0b00100000 | IF, true);
 
-                push(sp);
+                push(p);
 
                 // Read new program counter location from fixed address
                 pc = (bus::read(0xfffa) << 8) | bus::read(0xfffb);
@@ -56,7 +59,7 @@ namespace nes {
                 set_flags(0b00010000, false);
                 set_flags(0b00100000 | IF, true);
 
-                push(sp);
+                push(p);
 
                 // Read new program counter location from fixed address
                 pc = (bus::read(0xffff) << 8) | bus::read(0xfffe);
@@ -70,10 +73,6 @@ namespace nes {
             if (reset.prev == false && reset.value == false) {
                 handle_reset();
             }
-        }
-
-        void handle_interrupts() {
-            
         }
     }
 }
