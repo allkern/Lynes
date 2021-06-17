@@ -56,7 +56,9 @@ namespace nes {
             a = r & 0xff;
         }
 
-        void i_ill() {}
+        // Unimplemented opcode trap
+        void i_ill() { /*_log(warning, "NOP'ing Unimplemented opcode 0x%02x", opcode);*/ }
+
         void i_and() { a &= bus::read(operand); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
         void i_bcc() { if (!(p & CF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
         void i_bcs() { if (p & CF) { pc = operand; last_cycles++; cycles_elapsed++; } }
@@ -205,7 +207,23 @@ namespace nes {
         }
 
         void i_nop() {
-            if (opcode & 0xc) add_page_cross_cycles(); // Also emulate invalid NOPs
+            if ((opcode & 0xf) == 0xc) add_page_cross_cycles(); // Also emulate invalid NOPs
         }
+
+        // Unofficial opcodes
+        // void i_alr() { }
+        // void i_anc() { }
+        // void i_arr() { }
+        // void i_axs() { }
+        void i_lax() { i_lda(); i_tax(); }
+        void i_sax() { bus::write(operand, a & x); }
+        void i_dcp() { i_dec(); i_cmp(); }
+        void i_isc() { i_inc(); i_sbc(); }
+        // void i_rla() { }
+        // void i_rra() { }
+        // void i_slo() { }
+        // void i_sre() { }
+        // void i_skb() { }
+        // void i_ign() { }
     }
 }
