@@ -50,8 +50,17 @@ namespace nes {
             u8 off = IMM,
                l = R(off),
                h = R((off + 1) & 0xff);
+            
+            u16 addrb = ((h << 8) | l);
+            u16 addra = addrb + Y;
 
-            operand = ((h << 8) | l) + Y;
+            // Check page boundary cross
+            if ((addrb & 0xff00) != (addra & 0xff00)) {
+                last_cycles++;
+                cycles_elapsed++;
+            }
+
+            operand = addra;
         }
 
         void imp() {}

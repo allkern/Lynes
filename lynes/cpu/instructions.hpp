@@ -74,7 +74,7 @@ namespace nes {
         void i_inx() { x++; set_flags(ZF, !x); set_flags(NF, x & 0x80); }
         void i_iny() { y++; set_flags(ZF, !y); set_flags(NF, y & 0x80); }
         void i_jmp() { pc = operand; }
-        void i_jsr() { push(pc); pc = operand; }
+        void i_jsr() { push((u16)(pc - 1)); pc = operand; } // Hack?
         void i_lda() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); a = b; }
         void i_ldx() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); x = b; }
         void i_ldy() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); y = b; }
@@ -84,8 +84,8 @@ namespace nes {
         void i_php() { if (((p | 0b00110000) == 0x3a) || ((p | 0b00110000) == 0x39)) _log(debug, "push p=%02x", p); push((u8)(p | 0b00110000)); }
         void i_pla() { a = pop1(); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
         void i_plp() { u8 b = p; p = pop1() & 0b11001111; p |= b & 0b00110000; }
-        void i_rti() { u8 b = p; p = pop1() & 0b11001111; p |= b & 0b00110000; set_flags(IF, false); pc = pop(); }
-        void i_rts() { pc = pop(); }
+        void i_rti() { u8 b = p; p = pop1() & 0b11001111; p |= b & 0b00110000; pc = pop(); }
+        void i_rts() { pc = pop() + 1; } // Hack?
         void i_sec() { set_flags(CF, true); }
         void i_sed() { set_flags(DF, true); }
         void i_sei() { set_flags(IF, true); }
@@ -109,9 +109,9 @@ namespace nes {
             } else {
                 u8 b = bus::read(operand);
 
-                set_flags(CF, b & 0x1);
+                set_flags(CF, b & 0x80);
 
-                b >>= 1;
+                b <<= 1;
 
                 set_flags(ZF, !b);
                 set_flags(NF, b & 0x80);

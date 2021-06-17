@@ -40,7 +40,9 @@ int main() {
         cpu::handle_interrupts();
 
         //if (counter++ == 10) return 0;
-    } while (cpu::opcode != 0x0);
+    } while (cpu::cycles_elapsed <= 26554);
+
+    _log(debug, "Test result: %02x", bus::read(0x02));
 
     return 0;
 }
