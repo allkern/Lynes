@@ -25,6 +25,16 @@ namespace nes {
             page_crossed = false;
         }
 
+        inline void check_branch_cycles() {
+            if ((operand & 0xff00) == (pc & 0xff00)) {
+                cycles_elapsed++;
+                last_cycles++;
+            } else {
+                cycles_elapsed += 2;
+                last_cycles += 2;
+            }
+        }
+
         void i_adc() {
             u8 i = bus::read(operand), pa = a;
 
@@ -60,16 +70,16 @@ namespace nes {
         void i_ill() { /*_log(warning, "NOP'ing unimplemented opcode 0x%02x", opcode);*/ }
 
         void i_and() { a &= bus::read(operand); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
-        void i_bcc() { if (!(p & CF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
-        void i_bcs() { if (p & CF) { pc = operand; last_cycles++; cycles_elapsed++; } }
-        void i_beq() { if (p & ZF) { pc = operand; last_cycles++; cycles_elapsed++; } }
+        void i_bcc() { if (!(p & CF)) { check_branch_cycles(); pc = operand; } }
+        void i_bcs() { if (p & CF) { check_branch_cycles(); pc = operand; } }
+        void i_beq() { if (p & ZF) { check_branch_cycles(); pc = operand; } }
         void i_bit() { u8 b = bus::read(operand), r = b & a; set_flags(ZF, !r); set_flags(VF, b & 0x40); set_flags(NF, b & 0x80); }
-        void i_bmi() { if (p & NF) { pc = operand; last_cycles++; cycles_elapsed++; } }
-        void i_bne() { if (!(p & ZF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
-        void i_bpl() { if (!(p & NF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
+        void i_bmi() { if (p & NF) { check_branch_cycles(); pc = operand; } }
+        void i_bne() { if (!(p & ZF)) { check_branch_cycles(); pc = operand; } }
+        void i_bpl() { if (!(p & NF)) { check_branch_cycles(); pc = operand; } }
         void i_brk() { set_flags(IF, true); push(pc); push((u8)(p | 0b00110000)); set_flags(BF, false); pc = (bus::read(0xffff) << 8) | bus::read(0xfffe); }
-        void i_bvc() { if (!(p & VF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
-        void i_bvs() { if (p & VF) { pc = operand; last_cycles++; cycles_elapsed++; } }
+        void i_bvc() { if (!(p & VF)) { check_branch_cycles(); pc = operand; } }
+        void i_bvs() { if (p & VF) { check_branch_cycles(); pc = operand; } }
         void i_clc() { set_flags(CF, false); }
         void i_cld() { set_flags(DF, false); }
         void i_cli() { set_flags(IF, false); }
@@ -220,7 +230,7 @@ namespace nes {
         void i_dcp() { i_dec(); i_cmp(); }
         void i_isc() { i_inc(); i_sbc(); }
         void i_rla() { i_rol(); i_and(); }
-        void i_rra() { i_ror(); i_and(); }
+        void i_rra() { i_ror(); i_adc(); }
         void i_slo() { i_asl(); i_ora(); }
         void i_sre() { i_lsr(); i_eor(); }
         // void i_tas();
