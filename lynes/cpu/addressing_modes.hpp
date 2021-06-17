@@ -18,8 +18,12 @@ namespace nes {
     namespace cpu {
         typedef void (*addressing_mode_t)();
 
+        bool page_crossed = false;
+
         void abs() {
             u8 l = IMM, h = IMM;
+
+            page_crossed = false;
 
             operand = (h << 8) | l;
         }
@@ -31,13 +35,25 @@ namespace nes {
         void abx() {
             u8 l = IMM, h = IMM;
 
-            operand = ((h << 8) | l) + X;
+            u16 addrb = ((h << 8) | l);
+            u16 addra = addrb + X;
+
+            // Check page boundary cross
+            if ((addrb & 0xff00) != (addra & 0xff00)) page_crossed = true;
+
+            operand = addra;
         }
 
         void aby() {
             u8 l = IMM, h = IMM;
 
-            operand = ((h << 8) | l) + Y;
+            u16 addrb = ((h << 8) | l);
+            u16 addra = addrb + Y;
+
+            // Check page boundary cross
+            if ((addrb & 0xff00) != (addra & 0xff00)) page_crossed = true;
+
+            operand = addra;
         }
 
         void idx() {
@@ -55,10 +71,7 @@ namespace nes {
             u16 addra = addrb + Y;
 
             // Check page boundary cross
-            if ((addrb & 0xff00) != (addra & 0xff00)) {
-                last_cycles++;
-                cycles_elapsed++;
-            }
+            if ((addrb & 0xff00) != (addra & 0xff00)) page_crossed = true;
 
             operand = addra;
         }
@@ -71,9 +84,10 @@ namespace nes {
         void ind() {
             u8 l = IMM, h = IMM;
 
-            u16 addr = (h << 8) | l;
+            u16 addr = (h << 8) | l,
+                addr1 = (h << 8) | ((l + 1) & 0xff);
 
-            operand = (R(addr + 1) << 8) | R(addr);
+            operand = (R(addr1) << 8) | R(addr);
         }
     }
 }

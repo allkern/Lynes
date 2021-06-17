@@ -39,6 +39,8 @@ namespace nes {
             fetch();
             execute();
             handle_interrupts();
+
+            page_crossed = false;
         }
     }
 }

@@ -16,6 +16,15 @@ namespace nes {
 
         using namespace registers;
 
+        inline void add_page_cross_cycles() {
+            if (page_crossed) {
+                cycles_elapsed++;
+                last_cycles++;
+            }
+
+            page_crossed = false;
+        }
+
         void i_adc() {
             u8 i = bus::read(operand), pa = a;
 
@@ -49,16 +58,16 @@ namespace nes {
 
         void i_ill() {}
         void i_and() { a &= bus::read(operand); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
-        void i_bcc() { if (!(p & CF)) { pc = operand; last_cycles++; cycles_elapsed += 1; } }
-        void i_bcs() { if (p & CF) { pc = operand; last_cycles++; cycles_elapsed += 1; } }
-        void i_beq() { if (p & ZF) { pc = operand; last_cycles++; cycles_elapsed += 1; } }
+        void i_bcc() { if (!(p & CF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
+        void i_bcs() { if (p & CF) { pc = operand; last_cycles++; cycles_elapsed++; } }
+        void i_beq() { if (p & ZF) { pc = operand; last_cycles++; cycles_elapsed++; } }
         void i_bit() { u8 b = bus::read(operand), r = b & a; set_flags(ZF, !r); set_flags(VF, b & 0x40); set_flags(NF, b & 0x80); }
-        void i_bmi() { if (p & NF) { pc = operand; last_cycles++; cycles_elapsed += 1; } }
-        void i_bne() { if (!(p & ZF)) { pc = operand; last_cycles++; cycles_elapsed += 1; } }
-        void i_bpl() { if (!(p & NF)) { pc = operand; last_cycles++; cycles_elapsed += 1; } }
+        void i_bmi() { if (p & NF) { pc = operand; last_cycles++; cycles_elapsed++; } }
+        void i_bne() { if (!(p & ZF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
+        void i_bpl() { if (!(p & NF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
         void i_brk() { set_flags(IF, true); push(pc); push((u8)(p | 0b00110000)); set_flags(BF, false); pc = (bus::read(0xffff) << 8) | bus::read(0xfffe); }
-        void i_bvc() { if (!(p & VF)) { pc = operand; last_cycles++; cycles_elapsed += 1; } }
-        void i_bvs() { if (p & VF) { pc = operand; last_cycles++; cycles_elapsed += 1; } }
+        void i_bvc() { if (!(p & VF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
+        void i_bvs() { if (p & VF) { pc = operand; last_cycles++; cycles_elapsed++; } }
         void i_clc() { set_flags(CF, false); }
         void i_cld() { set_flags(DF, false); }
         void i_cli() { set_flags(IF, false); }
@@ -75,10 +84,9 @@ namespace nes {
         void i_iny() { y++; set_flags(ZF, !y); set_flags(NF, y & 0x80); }
         void i_jmp() { pc = operand; }
         void i_jsr() { push((u16)(pc - 1)); pc = operand; } // Hack?
-        void i_lda() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); a = b; }
-        void i_ldx() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); x = b; }
-        void i_ldy() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); y = b; }
-        void i_nop() {}
+        void i_lda() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); a = b; add_page_cross_cycles(); }
+        void i_ldx() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); x = b; add_page_cross_cycles(); }
+        void i_ldy() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); y = b; add_page_cross_cycles(); }
         void i_ora() { a |= bus::read(operand); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
         void i_pha() { if ((a == 0x3a) || (a == 0x39)) _log(debug, "push a=%02x", a); push(a); }
         void i_php() { if (((p | 0b00110000) == 0x3a) || ((p | 0b00110000) == 0x39)) _log(debug, "push p=%02x", p); push((u8)(p | 0b00110000)); }
@@ -194,6 +202,10 @@ namespace nes {
 
                 bus::write(operand, b);
             }
+        }
+
+        void i_nop() {
+            if (opcode & 0xc) add_page_cross_cycles(); // Also emulate invalid NOPs
         }
     }
 }
