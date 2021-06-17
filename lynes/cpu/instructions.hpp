@@ -17,7 +17,7 @@ namespace nes {
         using namespace registers;
 
         inline void add_page_cross_cycles() {
-            if (page_crossed) {
+            if (page_crossed && (opcode != 0xa0)) {
                 cycles_elapsed++;
                 last_cycles++;
             }
@@ -57,7 +57,7 @@ namespace nes {
         }
 
         // Unimplemented opcode trap
-        void i_ill() { /*_log(warning, "NOP'ing Unimplemented opcode 0x%02x", opcode);*/ }
+        void i_ill() { /*_log(warning, "NOP'ing unimplemented opcode 0x%02x", opcode);*/ }
 
         void i_and() { a &= bus::read(operand); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
         void i_bcc() { if (!(p & CF)) { pc = operand; last_cycles++; cycles_elapsed++; } }
@@ -90,8 +90,8 @@ namespace nes {
         void i_ldx() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); x = b; add_page_cross_cycles(); }
         void i_ldy() { u8 b = bus::read(operand); set_flags(ZF, !b); set_flags(NF, b & 0x80); y = b; add_page_cross_cycles(); }
         void i_ora() { a |= bus::read(operand); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
-        void i_pha() { if ((a == 0x3a) || (a == 0x39)) _log(debug, "push a=%02x", a); push(a); }
-        void i_php() { if (((p | 0b00110000) == 0x3a) || ((p | 0b00110000) == 0x39)) _log(debug, "push p=%02x", p); push((u8)(p | 0b00110000)); }
+        void i_pha() { push(a); }
+        void i_php() { push((u8)(p | 0b00110000)); }
         void i_pla() { a = pop1(); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
         void i_plp() { u8 b = p; p = pop1() & 0b11001111; p |= b & 0b00110000; }
         void i_rti() { u8 b = p; p = pop1() & 0b11001111; p |= b & 0b00110000; pc = pop(); }
@@ -211,19 +211,20 @@ namespace nes {
         }
 
         // Unofficial opcodes
-        // void i_alr() { }
-        // void i_anc() { }
-        // void i_arr() { }
-        // void i_axs() { }
+        // void i_alr();
+        // void i_anc();
+        // void i_arr();
+        // void i_axs();
         void i_lax() { i_lda(); i_tax(); }
         void i_sax() { bus::write(operand, a & x); }
         void i_dcp() { i_dec(); i_cmp(); }
         void i_isc() { i_inc(); i_sbc(); }
-        // void i_rla() { }
-        // void i_rra() { }
-        // void i_slo() { }
-        // void i_sre() { }
-        // void i_skb() { }
-        // void i_ign() { }
+        void i_rla() { i_rol(); i_and(); }
+        void i_rra() { i_ror(); i_and(); }
+        void i_slo() { i_asl(); i_ora(); }
+        void i_sre() { i_lsr(); i_eor(); }
+        // void i_tas();
+        // void i_skb();
+        // void i_ign();
     }
 }
