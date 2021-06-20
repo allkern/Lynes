@@ -25,6 +25,8 @@ namespace nes {
         // PPU only
         std::array <u8, 0x2000> ram;
 
+        std::array <u8, 0x20> palette_ram;
+
         lgw::framebuffer <PPU_WIDTH, PPU_HEIGHT> frame;
 
         // CPU exposed
