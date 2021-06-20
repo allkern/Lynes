@@ -4,3 +4,6 @@ bin/
 *.log
 *.exe
 *.ps1
+*.dll
+*.txt
+lgw/

@@ -4,6 +4,7 @@
 
 #include "addressing_modes.hpp"
 #include "opcode_table.hpp"
+#include "interrupts.hpp"
 #include "registers.hpp"
 #include "stack.hpp"
 #include "bus.hpp"

@@ -7,22 +7,16 @@
 #include <vector>
 #include <array>
 
+#include "mappers/header.hpp"
+#include "mappers/mapper.hpp"
+#include "mappers/nrom.hpp"
+
 #define CART_BEGIN 0x4020
 #define CART_END   0xffff
 
 namespace nes {
     namespace cart {
-        struct header_t {
-            char id[4];
-            u8 prg_rom_size,
-               chr_rom_size,
-               flags[5],
-               pad[5];
-        } header;
-
-        u8 mapper = 0;
-
-        std::array <u8, 0x4000> rom;
+        mapper_t* mapper = nullptr;
 
         void load(const char* file) {
             std::ifstream f;
@@ -37,7 +31,9 @@ namespace nes {
 
             f.read((char*)&header, sizeof(header_t));
 
-            mapper = (header.flags[0] >> 4) & 0xf | ((header.flags[1] >> 4) & 0xf) << 4;
+            switch (((header.flags[0] >> 4) & 0xf) | (((header.flags[1] >> 4) & 0xf) << 4)) {
+                case 0x00: mapper = new nrom(&f, &header); break;
+            }
 
             // _log(debug, "mapper=%02x, magic=%s, prg_rom_size=%u, chr_rom_size=%u, flags={%02x, %02x, %02x, %02x, %02x}",
             //     mapper,
@@ -50,16 +46,14 @@ namespace nes {
             //     header.flags[3],
             //     header.flags[4]
             // );
-
-            f.read((char*)rom.data(), 0x4000 * header.prg_rom_size);
         }
 
-        u8 read(u16 addr) {
-            if ((addr >= 0x8000) && (addr <= 0xffff)) {
-                return rom[(addr - 0x8000) & 0x3fff];
-            }
+        u8 read(u16 addr, bool ppu = false) {
+            return mapper->read(addr, ppu);
+        }
 
-            return 0x0;
+        void write(u16 addr, u8 value, bool ppu = false) {
+            return mapper->write(addr, value, ppu);
         }
     }
 }

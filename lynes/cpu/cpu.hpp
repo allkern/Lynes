@@ -13,12 +13,12 @@ namespace nes {
         using namespace registers;
 
         void init() {
-            p = 0x00;
+            p = 0x24;
             sp = 0xfd;
 
-            irq.value   = true;  irq.prev   = irq.value;
-            nmi.value   = true;  nmi.prev   = nmi.value;
-            reset.value = false; reset.prev = reset.value;
+            irq.value   = true; irq.prev   = irq.value;
+            nmi.value   = true; nmi.prev   = nmi.value;
+            reset.value = true; reset.prev = reset.value;
         }
 
         void fetch() {
@@ -38,7 +38,7 @@ namespace nes {
         void cycle() {
             fetch();
             execute();
-            handle_interrupts();
+            //handle_interrupts();
 
             page_crossed = false;
         }

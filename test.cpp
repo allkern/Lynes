@@ -35,7 +35,7 @@ void compare_files() {
         if (di >= 0) {
             std::cout << "Error in execution!\n";
             std::cout << "Lynes:\t\t\t\t\t\tNES:\n";
-            std::cout << "|: " << lytest_results.at(i - 1) << "\t" << nestest_results.at(i - 1) << std::endl;
+            std::cout << "|: " << lytest_results.at(i) << "\t" << nestest_results.at(i) << std::endl;
             std::cout << "-> " << lytest_results.at(i) << "\t" << nestest_results.at(i) << std::endl;
             std::cout << std::string(di + 1, ' ') << "^\n";
 

@@ -8,41 +8,36 @@ using namespace nes;
 #include <iostream>
 #include <iomanip>
 
-int main() {
-    _log::init("lynes", "lynes.log");
+#include "window.hpp"
+#include "input.hpp"
+#include "scheduler.hpp"
+#include "devices/ppu/callbacks.hpp"
 
-    cart::load("nestest.nes");
+using namespace frontend;
+
+int main(int argc, char* argv[]) {
+    _log::init("lynes");
+
+    scheduler::schedule("vblank-nmi", scheduler::nmi, 27393, ppu::vblank_cb);
+
+    cart::load(argv[1]);
+
+    window::register_keydown_cb(frontend::input::keydown);
+    window::register_keyup_cb(frontend::input::keyup);
 
     cpu::init();
     cpu::handle_reset();
-    cpu::registers::pc = 0xc000;
 
-    int counter = 0;
+    window::init(3);
 
-    do {
-        cpu::opcode = bus::read(cpu::registers::pc);
+    ppu::init(window::update);
 
-        //_log(debug, "op=%02x, a=%02x, x=%02x, y=%02x, p=%02x, sp=%02x, pc=%04x, cyc=%u",
-        _log(debug, "%04X %02X A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u",
-            cpu::registers::pc,
-            cpu::opcode,
-            cpu::registers::a,
-            cpu::registers::x,
-            cpu::registers::y,
-            cpu::registers::p,
-            cpu::registers::sp,
-            cpu::cycles_elapsed
-        );
+    while (window::is_open()) {
+        cpu::cycle();
+        scheduler::update();
+    }
 
-        cpu::fetch();
-
-        cpu::execute();
-        cpu::handle_interrupts();
-
-        //if (counter++ == 10) return 0;
-    } while (cpu::cycles_elapsed <= 26554);
-
-    _log(debug, "Test result: %02x", bus::read(0x02));
+    window::close();
 
     return 0;
 }

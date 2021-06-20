@@ -19,7 +19,6 @@ namespace nes {
         }
 
         u16 operand = 0x0, opcode = 0x0;
-        size_t cycles_elapsed, last_cycles;
 
         void set_flags(u8 mask, bool cond, bool reset = true) {
             using namespace registers;
