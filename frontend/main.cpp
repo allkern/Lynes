@@ -32,6 +32,25 @@ int main(int argc, char* argv[]) {
 
     ppu::init(window::update);
 
+#ifdef LYNES_TEST_MODE
+    do {
+        cpu::opcode = bus::read(cpu::registers::pc);
+
+        _log(debug, "%04X A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u",
+            cpu::registers::pc,
+            cpu::registers::a,
+            cpu::registers::x,
+            cpu::registers::y,
+            cpu::registers::p,
+            cpu::registers::sp,
+            cpu::cycles_elapsed
+        );
+
+        cpu::cycle();
+        scheduler::update();
+    } while (cpu::registers::pc != 0xe4f0);
+#endif
+
     while (window::is_open()) {
         cpu::cycle();
         scheduler::update();

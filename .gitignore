@@ -7,3 +7,7 @@ bin/
 *.dll
 *.txt
 lgw/
+logs/
+roms/
+test/
+test.cpp

@@ -41,12 +41,14 @@ namespace _log {
     template <class... Args> void log(const char* t, std::string fmt, Args... args) {
         sprintf(buf, fmt.c_str(), args...);
 
+        #ifdef LYNES_TEST_MODE
         #ifdef LOG_TARGET_LINUX
         std::cout << t << "\u001b[0m " + app_name + ": " << buf << std::endl;
         #elif LOG_TARGET_POWERSHELL
         std::cout << t << " " << app_name << ": " << buf << std::endl;
         #else
         std::cout << t << " " << app_name + ": " << buf << std::endl;
+        #endif
         #endif
 
         if (file.is_open()) {
