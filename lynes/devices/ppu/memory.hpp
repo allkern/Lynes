@@ -17,6 +17,7 @@
 
 #define PPUCTRL 0x0
 #define VADDRINC 0b00000100
+#define SPPTADDR 0b00001000
 #define BGPTADDR 0b00010000
 #define VBLKNMIE 0b10000000
 
@@ -26,6 +27,7 @@ namespace nes {
         std::array <u8, 0x2000> ram;
 
         std::array <u8, 0x20> palette_ram;
+        std::array <u8, 0x100> oam;
 
         lgw::framebuffer <PPU_WIDTH, PPU_HEIGHT> frame;
 
@@ -34,6 +36,7 @@ namespace nes {
 
         bool ppuaddr_latch = false;
         u16 ppuaddr = 0x0;
+        u8 oamaddr = 0x0;
     }
 }
 

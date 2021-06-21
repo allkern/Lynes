@@ -17,6 +17,9 @@ namespace nes {
             if (ppu::r[0x1] & 0x8)
                 ppu::render();
 
+            if (ppu::r[0x1] & 0x10)
+                ppu::render_sprites();
+
             //_log(debug, "vblank, trigger=%i, type=%u, reload=%u, cpucyc=%u", event.trigger, event.type, event.reload, cpu::cycles_elapsed);
             ppu::r[0x2] |= 0x80;
 

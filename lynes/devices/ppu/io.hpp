@@ -17,6 +17,17 @@ namespace nes {
                 return;
             }
 
+            if (addr == 0x2003) {
+                oamaddr = value;
+                return;
+            }
+
+            if (addr == 0x2004) {
+                oam.at(oamaddr++) = value;
+
+                return;
+            }
+
             if (addr == 0x2007) {
                 bus::write(ppuaddr & 0x3fff, value);
 
@@ -33,6 +44,10 @@ namespace nes {
                 u8 b = r[addr & 0x7] | 0x40; // Sprite 0 hit hack, fix
                 r[0x2] &= 0x7f;
                 return b;
+            }
+
+            if (addr == 0x2004) {
+                return oam.at(oamaddr++);
             }
 
             if (addr == 0x2007) {

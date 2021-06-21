@@ -6,6 +6,7 @@
 #include "devices/input.hpp"
 #include "devices/cart.hpp"
 #include "devices/ram.hpp"
+#include "devices/dma/dma.hpp"
 
 #define IN_RANGE(l, h) ((addr >= l) && (addr <= h))
 
@@ -27,7 +28,7 @@ namespace nes {
             if (IN_RANGE(PPU_BEGIN  , PPU_END  )) { ppu::write(addr, value); return; }
             if (IN_RANGE(CART_BEGIN , CART_END )) { cart::write(addr, value); return; }
             if (IN_RANGE(INPUT_BEGIN, INPUT_END)) { input::write(addr, value); return; }
-            
+            if (IN_RANGE(DMA_BEGIN  , DMA_END  )) { dma::write(addr, value); return; }
         }
     }
 }

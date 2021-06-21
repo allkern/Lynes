@@ -19,7 +19,6 @@ namespace nes {
 
         frame_ready_callback_t frame_ready_cb = nullptr;
 
-
         void init(frame_ready_callback_t fr) {
             frame_ready_cb = fr;
         }
@@ -34,6 +33,39 @@ namespace nes {
             /*2*/ lgw::rgb(236, 238, 236), lgw::rgb( 76, 154, 236), lgw::rgb(120, 124, 236), lgw::rgb(176,  98, 236), lgw::rgb(228,  84, 236), lgw::rgb(236,  88, 180), lgw::rgb(236, 106, 100), lgw::rgb(212, 136,  32), lgw::rgb(160, 170,   0), lgw::rgb(116, 196,   0), lgw::rgb( 76, 208,  32), lgw::rgb( 56, 204, 108), lgw::rgb( 56, 180, 204), lgw::rgb( 60,  60,  60), lgw::rgb(  0,   0,   0), lgw::rgb(  0,   0,   0),
             /*3*/ lgw::rgb(236, 238, 236), lgw::rgb(168, 204, 236), lgw::rgb(188, 188, 236), lgw::rgb(212, 178, 236), lgw::rgb(236, 174, 236), lgw::rgb(236, 174, 212), lgw::rgb(236, 180, 176), lgw::rgb(228, 196, 144), lgw::rgb(204, 210, 120), lgw::rgb(180, 222, 120), lgw::rgb(168, 226, 144), lgw::rgb(152, 226, 180), lgw::rgb(160, 214, 228), lgw::rgb(160, 162, 160), lgw::rgb(  0,   0,   0), lgw::rgb(  0,   0,   0)
         };
+
+        void render_sprites() {
+            int i = 0;
+
+            while (i < 0x100) {
+                u8 y = oam.at(i++),
+                   t = oam.at(i++),
+                   a = oam.at(i++),
+                   x = oam.at(i++);
+
+                if (y >= 0xef) continue;
+
+                int pal = a & 0x3;
+                   
+                for (int fy = 0; fy < 0x8; fy++) {
+                    int fyr = (a & 0x80) ? (7 - fy) : fy;
+
+                    u8 l = cart::read((TEST_REG(PPUCTRL, SPPTADDR) ? 0x1000 : 0) + ((t << 4) | fyr), true),
+                       h = cart::read((TEST_REG(PPUCTRL, SPPTADDR) ? 0x1000 : 0) + ((t << 4) | 0x8 | fyr), true);
+
+                    for (int fx = 0; fx < 0x8; fx++) {
+                        u16 mask = (a & 0x40) ? (0x0101 << fx) : (0x8080 >> fx);
+                        size_t index = _pext_u32(((u16)h << 8) | l, mask);
+                        u16 addr = 0x3f10 | (pal << 2) | index;
+
+                        if (index) {
+                            u32 color = palette[bus::read(addr)];
+                            frame.draw(x + fx, (y + 1) + fy, color);
+                        }
+                    }
+                }
+            }
+        }
 
         void render() {
             for (int row = 0; row < 0x20; row++) {
