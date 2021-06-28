@@ -60,46 +60,67 @@ namespace nes {
 
                         if (index) {
                             u32 color = palette[bus::read(addr)];
-                            frame.draw(x + fx, (y + 1) + fy, color);
+                            
+                            if ((x + fx) < PPU_WIDTH)
+                                frame.draw(x + fx, (y + 1) + fy, color);
                         }
                     }
                 }
             }
         }
 
+        uint32_t gs_palette[] = {
+            0x000000ff,
+            0x555555ff,
+            0xaaaaaaff,
+            0xffffffff
+        };
+
         void render() {
-            for (int row = 0; row < 0x20; row++) {
-                for (int c = 0; c < 0x20; c++) {
-                    u8 attr = bus::read(0x23c0 | ((row >> 2) << 3) | (c >> 2));
+            u16 addr = 0x0;
 
-                    int attr_index = (((row >> 1) & 0x1) << 1) | ((c >> 1) & 0x1),
-                        pal = (attr >> (attr_index << 1)) & 0x3;
+            for (int y = 0; y < PPU_HEIGHT; y++) {
+                int row = y >> 3;
 
-                    u16 addr = (row << 5) | c;
+                for (int x = 0; x <= PPU_WIDTH; x++) {
+                    u16 base_nta = (r[0x0] & 0x3) * 0x400,
+                        base_nta_xoff = (r[0x0] & 0x3) * 0xff;
 
-                    u8 b = ram[addr];
+                    int sx = (base_nta_xoff + (x + fine_x)) & 0x1ff;
+                    int col = sx >> 3;
 
-                    for (int fy = 0; fy < 0x8; fy++) {
-                        u8 l = cart::read((TEST_REG(PPUCTRL, BGPTADDR) ? 0x1000 : 0) + ((b << 4) | fy), true),
-                           h = cart::read((TEST_REG(PPUCTRL, BGPTADDR) ? 0x1000 : 0) + ((b << 4) | 0x8 | fy), true);
-                        
-                        for (int fx = 0; fx < 0x8; fx++) {
-                            size_t index = _pext_u32(((u16)h << 8) | l, 0x8080 >> fx);
-                            u16 addr = 0x3f00 | (pal << 2) | index;
+                    addr = base_nta + (((col >> 5) * 0x400) - base_nta) + (row << 5 | (col & 0x1f));
 
-                            u32 color = 0;
-                            
-                            if (index == 0) {
-                                color = palette[bus::read(0x3f00)];
-                            } else {
-                                color = palette[bus::read(addr)];
-                            }
+                    u8 tile = ram[addr];
 
-                            frame.draw((c << 3) + fx, (row << 3) + fy, color);
-                        }
+                    u16 tm_base = TEST_REG(PPUCTRL, BGPTADDR) ? 0x1000 : 0;
+
+                    u16 attr_addr_base = base_nta + (((col >> 5) * 0x400) - base_nta);
+
+                    u8 l = cart::read(tm_base + ((tile << 4) | y & 0x7), true),
+                       h = cart::read(tm_base + ((tile << 4) | 0x8 | y & 0x7), true),
+                       a = bus::read((0x23c0 + attr_addr_base) + ((col & 0x1f) >> 2) + ((row >> 2) << 3));
+
+                    int index = _pext_u32(((u16)h << 8) | l, 0x8080 >> (sx & 0x7)),
+                        attr_index = (((row >> 1) & 0x1) << 1) | ((col >> 1) & 0x1),
+                        pal = (a >> (attr_index << 1)) & 0x3;
+
+                    u16 attr_addr = 0x3f00 | (pal << 2) | index;
+
+                    u32 color = 0;
+
+                    if (index == 0) {
+                        color = palette[bus::read(0x3f00)];
+                    } else {
+                        color = palette[bus::read(attr_addr)];
                     }
+
+                    frame.draw(x, y, color);
                 }
             }
         }
     }
 }
+
+#undef PPU_WIDTH
+#undef PPU_HEIGHT

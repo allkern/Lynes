@@ -5,6 +5,18 @@
 namespace nes {
     namespace ppu {
         void write(u16 addr, u8 value) {
+            if (addr == 0x2005) {
+                if (!ppuscroll_latch) {
+                    fine_x = value;
+                    ppuscroll_latch = true;
+                } else {
+                    fine_y = value;
+                    ppuscroll_latch = false;
+                }
+
+                return;
+            }
+
             if (addr == 0x2006) {
                 if (!ppuaddr_latch) {
                     ppuaddr = value << 8;

@@ -34,12 +34,12 @@ namespace nes {
         // CPU exposed
         u8 r[0x8] = { 0 };
 
-        bool ppuaddr_latch = false;
+        bool ppuaddr_latch = false,
+             ppuscroll_latch = false;
+        
+        u8 fine_x = 0,
+           fine_y = 0;
         u16 ppuaddr = 0x0;
         u8 oamaddr = 0x0;
     }
 }
-
-
-#undef PPU_WIDTH
-#undef PPU_HEIGHT
