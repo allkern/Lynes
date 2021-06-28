@@ -39,9 +39,14 @@ namespace nes {
         }
 
         u8 read(u16 addr) {
-            if (index > 7) return 1;
+            if (addr == 0x4016) {
+                if (index > 7) return 1;
+                if (strobe) index = 0;
 
-            return (buttons >> index++) & 0x1;
+                return (buttons >> index++) & 0x1;
+            }
+
+            return 0;
         }
     }
 }

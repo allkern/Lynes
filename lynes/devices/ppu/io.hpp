@@ -39,9 +39,11 @@ namespace nes {
             r[addr & 0x7] = value;
         }
 
+        u8 ppudata_read_buf = 0;
+
         u8 read(u16 addr) {
             if (addr == 0x2002) {
-                u8 b = r[addr & 0x7] | 0x40; // Sprite 0 hit hack, fix
+                u8 b = r[addr & 0x7]; // Sprite 0 hit hack, fix
                 r[0x2] &= 0x7f;
                 return b;
             }
@@ -51,7 +53,10 @@ namespace nes {
             }
 
             if (addr == 0x2007) {
-                u8 b = bus::read(ppuaddr & 0x3fff);
+                u8 b = ppudata_read_buf;
+
+                if (ppuaddr <= 0x3eff)
+                    ppudata_read_buf = bus::read(ppuaddr & 0x3fff);
                 
                 ppuaddr += TEST_REG(PPUCTRL, VADDRINC) ? 32 : 1;
 

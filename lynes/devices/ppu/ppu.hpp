@@ -75,8 +75,6 @@ namespace nes {
                     int attr_index = (((row >> 1) & 0x1) << 1) | ((c >> 1) & 0x1),
                         pal = (attr >> (attr_index << 1)) & 0x3;
 
-                    //_log(debug, "tile @ (%u, %u), attr_index=%u, pal=%u", c, row, attr_index << 1, pal);
-
                     u16 addr = (row << 5) | c;
 
                     u8 b = ram[addr];
@@ -89,7 +87,6 @@ namespace nes {
                             size_t index = _pext_u32(((u16)h << 8) | l, 0x8080 >> fx);
                             u16 addr = 0x3f00 | (pal << 2) | index;
 
-                            //_log(debug, "addr=%04x", addr);
                             u32 color = 0;
                             
                             if (index == 0) {

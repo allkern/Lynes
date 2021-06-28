@@ -106,7 +106,7 @@ namespace nes {
         void i_pla() { a = pop1(); set_flags(ZF, !a); set_flags(NF, a & 0x80); }
         void i_plp() { u8 b = p; p = pop1() & 0b11001111; p |= b & 0b00110000; }
         void i_rti() { u8 b = p; p = pop1() & 0b11001111; p |= b & 0b00110000; pc = pop(); }
-        void i_rts() { pc = pop() + 1; } // Hack?
+        void i_rts() { pc = pop() + 1; }
         void i_sec() { set_flags(CF, true); }
         void i_sed() { set_flags(DF, true); }
         void i_sei() { set_flags(IF, true); }

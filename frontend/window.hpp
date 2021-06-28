@@ -10,6 +10,8 @@
 
 #include "SDL.h"
 
+#include "ntsc/ntsc.hpp"
+
 #include <chrono>
 #include <unordered_map>
 
@@ -78,7 +80,10 @@ namespace frontend {
             SDL_Quit();
         }
 
-        void init(size_t scale) {
+        bool ntsc_filter_enabled = false;
+        uint32_t* ntsc_buf = nullptr;
+
+        void init(size_t scale, bool ntsc_filter = false) {
             uint32_t SDL_INIT_FLAGS = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
 
             SDL_Init(SDL_INIT_FLAGS);
@@ -102,9 +107,17 @@ namespace frontend {
                 SDL_TEXTUREACCESS_STREAMING,
                 PPU_WIDTH, PPU_HEIGHT
             );
+
+            if (ntsc_filter) {
+                ntsc::init(ppu::frame.get_buffer(), PPU_WIDTH, PPU_HEIGHT);
+
+                ntsc_buf = ntsc::output::get_buffer();
+            }
+
+            ntsc_filter_enabled = ntsc_filter;
         }
 
-        void update(uint32_t* buf) {
+        void update(uint32_t* raw_buf) {
             end = std::chrono::high_resolution_clock::now();
 
             std::chrono::duration <double> d = end - start;
@@ -116,12 +129,15 @@ namespace frontend {
                 end = start;
             }
 
-            SDL_RenderClear(sdl::renderer);
+            //SDL_RenderClear(sdl::renderer);
+
+            if (ntsc_filter_enabled)
+                ntsc::codec();
 
             SDL_UpdateTexture(
                 sdl::texture,
                 NULL,
-                buf,
+                ntsc_filter_enabled ? ntsc_buf : raw_buf,
                 PPU_WIDTH * sizeof(uint32_t)
             );
 
