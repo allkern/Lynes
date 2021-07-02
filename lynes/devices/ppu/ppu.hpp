@@ -8,7 +8,6 @@
 #include "../cart.hpp"
 #include "immintrin.h"
 
-//#include "callbacks.hpp"
 #include "memory.hpp"
 #include "bus.hpp"
 #include "io.hpp"
@@ -68,13 +67,6 @@ namespace nes {
                 }
             }
         }
-
-        uint32_t gs_palette[] = {
-            0x000000ff,
-            0x555555ff,
-            0xaaaaaaff,
-            0xffffffff
-        };
 
         void render() {
             u16 addr = 0x0;

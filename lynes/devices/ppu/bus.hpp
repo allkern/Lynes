@@ -18,6 +18,7 @@ namespace nes {
             }
 
             void write(u16 addr, u8 value) {
+                if (IN_RANGE(0x0000, 0x1fff)) { cart::write(addr, value, true); return; }
                 if (IN_RANGE(0x2000, 0x3eff)) { ram.at(addr - 0x2000) = value; return; }
                 if (IN_RANGE(0X3f00, 0x3f1f)) {
                     if (

@@ -83,10 +83,31 @@ namespace frontend {
         bool ntsc_filter_enabled = false;
         uint32_t* ntsc_buf = nullptr;
 
-        void init(size_t scale, bool ntsc_filter = false) {
+        int width, height;
+
+        void init(size_t scale, bool ntsc_filter = false, int prescale = 0) {
             uint32_t SDL_INIT_FLAGS = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
 
             SDL_Init(SDL_INIT_FLAGS);
+
+            width = PPU_WIDTH;
+            height = PPU_HEIGHT;
+
+            if (ntsc_filter) {
+                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+
+                ntsc::init(ppu::frame.get_buffer(), width, height);
+
+
+                if (prescale > 1) {
+                    ntsc::prescaler::init(prescale);
+
+                    width *= prescale;
+                    height *= prescale;
+                }
+
+                ntsc_buf = ntsc::output::get_buffer();
+            }
 
             sdl::window = SDL_CreateWindow(
                 "Lynes " STR(LYNES_COMMIT_HASH),
@@ -105,14 +126,8 @@ namespace frontend {
                 sdl::renderer,
                 SDL_PIXELFORMAT_RGBA8888,
                 SDL_TEXTUREACCESS_STREAMING,
-                PPU_WIDTH, PPU_HEIGHT
+                width, height
             );
-
-            if (ntsc_filter) {
-                ntsc::init(ppu::frame.get_buffer(), PPU_WIDTH, PPU_HEIGHT);
-
-                ntsc_buf = ntsc::output::get_buffer();
-            }
 
             ntsc_filter_enabled = ntsc_filter;
         }
@@ -123,13 +138,14 @@ namespace frontend {
             std::chrono::duration <double> d = end - start;
 
             if (std::chrono::duration_cast<std::chrono::seconds>(d).count() == 1) {
+                char buf[100];
                 fps = frames_rendered;
+                sprintf(&buf[0], "Lynes %s | %f fps", STR(LYNES_COMMIT_HASH), (float)fps);
+                SDL_SetWindowTitle(sdl::window, &buf[0]);
                 frames_rendered = 0;
                 start = std::chrono::high_resolution_clock::now();
                 end = start;
             }
-
-            //SDL_RenderClear(sdl::renderer);
 
             if (ntsc_filter_enabled)
                 ntsc::codec();
@@ -138,7 +154,7 @@ namespace frontend {
                 sdl::texture,
                 NULL,
                 ntsc_filter_enabled ? ntsc_buf : raw_buf,
-                PPU_WIDTH * sizeof(uint32_t)
+                width * sizeof(uint32_t)
             );
 
             SDL_RenderCopy(sdl::renderer, sdl::texture, NULL, NULL);

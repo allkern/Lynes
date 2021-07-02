@@ -17,19 +17,19 @@ namespace nes {
         // iNES Mapper 0
         struct mmc1 : mapper_t {
             typedef std::array <u8, 0x8000> prg_rom_bank_t;
-            typedef std::array <u8, 0x1000> chr_rom_bank_t;
+            typedef std::array <u8, 0x1000> chr_mem_bank_t;
 
             typedef std::vector <prg_rom_bank_t> prg_rom_t;
-            typedef std::vector <chr_rom_bank_t> chr_rom_t;
+            typedef std::vector <chr_mem_bank_t> chr_mem_t;
             typedef std::array <u8, 0x2000> prg_ram_t;
-            typedef std::array <u8, 0x2000> chr_ram_t;
 
             header_t* hdr = nullptr;
 
             prg_rom_t prg_rom;
-            chr_rom_t chr_rom;
-            chr_ram_t chr_ram;
+            chr_mem_t chr_rom;
+            chr_mem_t chr_ram;
             prg_ram_t prg_ram;
+            chr_mem_t* chr_mem;
 
             struct control_t {
                 enum mirroring_t : int {
@@ -65,7 +65,8 @@ namespace nes {
                 hdr = header;
 
                 prg_rom_bank_t prgb;
-                chr_rom_bank_t chrb;
+                chr_mem_bank_t chrb;
+
 
                 while (header->prg_rom_size--) {
                     f->read((char*)prgb.data(), 0x4000);
@@ -77,7 +78,12 @@ namespace nes {
 
                 chr_ram_enabled = !header->chr_rom_size;
 
-                if (chr_ram_enabled) return;
+                if (chr_ram_enabled) {
+                    chr_ram.resize(2);
+                    chr_mem = &chr_ram;
+
+                    return;
+                }
 
                 header->chr_rom_size <<= 1;
 
@@ -87,7 +93,7 @@ namespace nes {
                     chr_rom.push_back(chrb);
                 }
 
-                _log(debug, "prg_rom size=%u, chr_rom size=%u", prg_rom.size(), chr_rom.size());
+                chr_mem = &chr_rom;
             }
 
             u8 read(u16 addr, bool ppu) override {
@@ -108,18 +114,16 @@ namespace nes {
                         }
                     }
                 } else {
-                    if (chr_ram_enabled) return chr_ram.at(addr);
-
                     if (IN_RANGE(0x0000, 0x0fff)) {
                         switch (control.chr_bank_mode) {
-                            case control_t::all_banks: return chr_rom[3].at(addr);
-                            case control_t::upper_lower: return chr_rom[control.lower_chr_bank].at(addr);
+                            case control_t::all_banks: return chr_mem->at(0).at(addr);
+                            case control_t::upper_lower: return chr_mem->at(control.lower_chr_bank).at(addr);
                         }
                     }
                     if (IN_RANGE(0x1000, 0x1fff)) {
                         switch (control.chr_bank_mode) {
-                            case control_t::all_banks: return chr_rom[3].at(addr - 0x1000);
-                            case control_t::upper_lower: return chr_rom[control.upper_chr_bank].at(addr - 0x1000);
+                            case control_t::all_banks: return chr_mem->at(chr_mem->size() - 1).at(addr - 0x1000);
+                            case control_t::upper_lower: return chr_mem->at(control.upper_chr_bank).at(addr - 0x1000);
                         }
                     }
                 }
@@ -137,16 +141,20 @@ namespace nes {
 
                         if (sr & 0x1) {
                             sr_full = true;
-                            return;
+                            //goto full;
                         } else {
                             sr >>= 1;
-                            sr |= (value & 0x1) << 4;
+                            sr |= ((value & 0x1) << 4);
                         }
                     }
 
+                    full:
+
                     if (sr_full) {
                         sr_value = sr >> 1 | ((value & 0x1) << 4);
-                        _log(debug, "srvalue=%02x", sr_value);
+
+                        sr = 0x10;
+                        sr_full = false;
 
                         if (IN_RANGE(0x8000, 0x9fff)) {
                             u8 old = control.chr_bank_mode;
@@ -154,19 +162,15 @@ namespace nes {
                             control.prg_bank_mode = (control_t::prg_bank_mode_t)((sr_value >> 2) & 0x3);
                             control.chr_bank_mode = (control_t::chr_bank_mode_t)((sr_value >> 4) & 0x1);
 
-                            _log(debug, "chr_bank_mode=%02x", control.chr_bank_mode);
-
                             return;
                         }
                         if (IN_RANGE(0xa000, 0xbfff)) { control.lower_chr_bank = sr_value; return; }
                         if (IN_RANGE(0xc000, 0xdfff)) { control.upper_chr_bank = sr_value; return; }
                         if (IN_RANGE(0xe000, 0xffff)) { control.prg_bank = sr_value; }
-
-                        sr = 0x10;
-                        sr_full = false;
                     }
                 } else {
-                    if (IN_RANGE(0x0000, 0x1fff)) { chr_ram.at(addr) = value; return; }
+                    if (IN_RANGE(0x0000, 0x0fff)) { chr_ram.at(0).at(addr) = value; return; }
+                    if (IN_RANGE(0x1000, 0x1fff)) { chr_ram.at(1).at(addr-0x1000) = value; return; }
                 }
             }
         };

@@ -13,6 +13,7 @@ using namespace nes;
 #include "window.hpp"
 #include "input.hpp"
 #include "scheduler.hpp"
+#include "audio.hpp"
 #include "devices/ppu/callbacks.hpp"
 
 using namespace frontend;
@@ -30,9 +31,11 @@ int main(int argc, char* argv[]) {
     cpu::init();
     cpu::handle_reset();
 
-    window::init(3);
+    window::init(3, true, 2);
 
     ppu::init(window::update);
+    apu::init();
+    audio::init();
 
 #ifdef LYNES_TEST_MODE
     do {
