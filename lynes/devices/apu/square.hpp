@@ -2,7 +2,9 @@
 
 #include "../../global.hpp"
 
-#define NES_NATIVE_FREQ 1789773 // MHz
+#include "common.hpp"
+
+#include <cmath>
 
 namespace nes {
     namespace apu {
@@ -15,14 +17,10 @@ namespace nes {
 
         double duties[] = { 8.0, 4.0, 2.0, 1.3 };
 
-        template <typename T> inline int sign(T val) {
-            return (T(0) < val) - (val < T(0));
-        }
-
         int16_t generate_square_sample(double t, double f, double a, double dc) {
             if ((!dc) || (!f) || (!a)) return 0x0;
 
-            double c = 2000000 / f,
+            double c = NES_NATIVE_SAMPLERATE / f,
                    h = c / dc;
                    
             if (!((u32)std::round(c))) return 0x0;
@@ -62,9 +60,10 @@ namespace nes {
             void update() {
                 duty = duties[(sr[0] >> 6) & 0x3];
                 freq = (sr[2] | ((sr[3] & 0x7) << 8));
-                freq = NES_NATIVE_FREQ / (16 * (freq + 1));
+                freq = NES_NATIVE_SAMPLERATE / (16 * (freq + 1));
+                double length = length_counter_lut[(sr[3] >> 3) & 0x1f] / 5;
 
-                remaining_samples = ((double)((sr[3] >> 3) & 0x1f) / 10) * NES_NATIVE_FREQ;
+                remaining_samples = (double)(length / 254) * NES_NATIVE_SAMPLERATE;
 
                 playing = true;
 

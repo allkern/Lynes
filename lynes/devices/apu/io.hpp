@@ -22,6 +22,8 @@ namespace nes {
 
             if (addr == 0x4003) sq0.update();
             if (addr == 0x4007) sq1.update();
+            if (addr == 0x400b) tri.update();
+            if (addr == 0x400f) noi.update();
         }
     }
 }

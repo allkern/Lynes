@@ -28,7 +28,7 @@ namespace nes {
         void write(u16 addr, u8 value) {
             if (IN_RANGE(RAM_BEGIN  , RAM_END      )) { ram::write(addr, value); return; }
             if (IN_RANGE(PPU_BEGIN  , PPU_END      )) { ppu::write(addr, value); return; }
-            if (IN_RANGE(APU_BEGIN  , 0x4007       )) { apu::write(addr, value); return; }
+            if (IN_RANGE(APU_BEGIN  , 0x400f       )) { apu::write(addr, value); return; }
             //if (IN_RANGE(0x4017     , 0x4017       )) { apu::write(addr, value); return; }
             if (IN_RANGE(INPUT_BEGIN, INPUT_END    )) { input::write(addr, value); return; }
             if (IN_RANGE(CART_BEGIN , CART_END     )) { cart::write(addr, value); return; }

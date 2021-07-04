@@ -6,9 +6,9 @@
 #include "../lynes/devices/apu/apu.hpp"
 
 #define AUDIO_DEVICE_SAMPLERATE 48000
-#define AUDIO_BUFFER_SIZE 128
+#define AUDIO_BUFFER_SIZE 32
 #define AUDIO_RESAMPLER_FILL_SIZE \
-    ((size_t)(AUDIO_BUFFER_SIZE * ((double)2000000 / (double)AUDIO_DEVICE_SAMPLERATE)))
+    ((size_t)(AUDIO_BUFFER_SIZE * ((double)NES_NATIVE_SAMPLERATE / (double)AUDIO_DEVICE_SAMPLERATE)))
 
 #include <cstdint>
 #include <vector>
@@ -41,7 +41,7 @@ namespace frontend {
             stream = SDL_NewAudioStream(
                 AUDIO_S16SYS,
                 1,
-                2000000,
+                NES_NATIVE_SAMPLERATE,
                 AUDIO_S16SYS,
                 1,
                 AUDIO_DEVICE_SAMPLERATE
