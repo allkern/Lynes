@@ -2,6 +2,8 @@
 
 #include "../../global.hpp"
 
+#define NES_NATIVE_FREQ 1789773 // MHz
+
 namespace nes {
     namespace apu {
         u8 square_duty_cycles[] = {
@@ -10,6 +12,8 @@ namespace nes {
             0b00001111,
             0b11111100
         };
+
+        double duties[] = { 8.0, 4.0, 2.0, 1.3 };
 
         template <typename T> inline int sign(T val) {
             return (T(0) < val) - (val < T(0));
@@ -35,6 +39,7 @@ namespace nes {
             bool playing = false;
             size_t remaining_samples = 0;
             double freq = 0.0;
+            double duty = 2;
 
             void init(u8* sr_ptr) {
                 sr = sr_ptr;
@@ -43,7 +48,7 @@ namespace nes {
             int16_t get_sample() {
                 if (playing) {
                     if (remaining_samples--) {
-                        return generate_square_sample(clk++, freq, 1.0, 2.0);
+                        return generate_square_sample(clk++, freq, 1.0, duty);
                     } else {
                         playing = false;
                     }
@@ -55,14 +60,15 @@ namespace nes {
             }
 
             void update() {
-                freq = (sr[2] | (sr[3] & 0x7 << 8));
-                freq = 111860.8 / (freq+1);
+                duty = duties[(sr[0] >> 6) & 0x3];
+                freq = (sr[2] | ((sr[3] & 0x7) << 8));
+                freq = NES_NATIVE_FREQ / (16 * (freq + 1));
 
-                remaining_samples = ((double)((sr[3] >> 3) & 0x1f) / 20) * 2000000;
+                remaining_samples = ((double)((sr[3] >> 3) & 0x1f) / 10) * NES_NATIVE_FREQ;
 
                 playing = true;
 
-                _log(debug, "freq=%f, remaining_samples=%u", freq, remaining_samples);
+                //_log(debug, "freq=%f, duty=%u, rduty=%f, remaining_samples=%u", freq, (sr[0] >> 6) & 0x3, duty, remaining_samples);
             }
         } sq0, sq1;
     }

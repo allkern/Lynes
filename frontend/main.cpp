@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     cpu::init();
     cpu::handle_reset();
 
-    window::init(3, true, 2);
+    window::init(3);
 
     ppu::init(window::update);
     apu::init();
@@ -56,8 +56,6 @@ int main(int argc, char* argv[]) {
         scheduler::update();
     } while (cpu::cycles_elapsed <= 57250);
 #endif
-
-int counter = 1000000;
 
 #ifndef LYNES_TEST_MODE
     while (window::is_open()) {

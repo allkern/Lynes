@@ -133,6 +133,19 @@ namespace nes {
 
             bool sr_full = false;
 
+            u16 translate_ciram_address(u16 addr) override {
+                u16 ciram_bits = addr & 0xc00;
+
+                switch (control.mirroring) {
+                    case control_t::one_screen_lb: ciram_bits = 0x0; break;
+                    case control_t::one_screen_ub: ciram_bits = 0x400; break;
+                    // case control_t::vertical: break; // Nothing to do here
+                    case control_t::horizontal: ciram_bits >>= 1; break;
+                }
+
+                return (addr & 0xf3ff) | (ciram_bits & 0x400);
+            }
+
             void write(u16 addr, u8 value, bool ppu) override {
                 if (!ppu) {
                     if (IN_RANGE(0x6000, 0x7fff)) { prg_ram[addr - 0x6000] = value; return; }

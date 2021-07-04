@@ -55,6 +55,10 @@ namespace nes {
             );
         }
 
+        u16 translate_ciram_address(u16 addr) {
+            return mapper->translate_ciram_address(addr);
+        }
+
         u8 read(u16 addr, bool ppu = false) {
             return mapper->read(addr, ppu);
         }

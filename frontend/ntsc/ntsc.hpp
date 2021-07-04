@@ -39,17 +39,7 @@ namespace ntsc {
     //  |---> s -+-> subcarrier -+                               +-> c -|NTSC decoding|-> c'rgb -+
     //  +---> p -+
 
-    struct worker_thread_t {
-        int start, len, py;
-
-        std::thread* thr;
-
-        bool restart;
-    };
-
     bool encoded = false;
-
-    std::mutex mtx;
 
     // Access a 2D image buffer with clamped coordinates
     namespace input {
@@ -59,17 +49,10 @@ namespace ntsc {
         void* buf;
 
         uint32_t get(int x, int y) {
-            uint32_t r;
-
-            mtx.lock();
             x = std::clamp(x, 0, (int)w);
             y = std::clamp(y, 0, (int)h);
 
-            r = static_cast<uint32_t*>(buf)[x + (y * w)];
-
-            mtx.unlock();
-
-            return r;
+            return static_cast<uint32_t*>(buf)[x + (y * w)];
         }
     }
 
@@ -93,7 +76,7 @@ namespace ntsc {
         size_t w, h;
         size_t size;
 
-        std::vector <uint32_t> buf;
+        static std::vector <uint32_t> buf;
 
         uint32_t get(int x, int y) {
             x = std::clamp(x, 0, (int)w);
@@ -116,13 +99,8 @@ namespace ntsc {
 
     std::vector <uint32_t> line;
     std::vector <double> luma, chroma;
-    std::vector <worker_thread_t> threads;
-
-    int threaded_regions = DEFAULT_THREADS;
 
     bool prescale = false;
-
-    void codec_region(worker_thread_t*);
 
     namespace prescaler {
         namespace original {
@@ -135,9 +113,9 @@ namespace ntsc {
 
         int width = 0, height = 0;
 
-        std::vector <uint32_t> buf;
+        static std::vector <uint32_t> buf;
 
-        void init(int scale, int threaded_regions = DEFAULT_THREADS) {
+        void init(int scale) {
             original::buf    = input::buf;
             original::width  = input::w;
             original::height = input::h;
@@ -149,17 +127,6 @@ namespace ntsc {
             output::w = width;
             output::h = height;
             output::buf.resize(output::w * output::h);
-
-            threads.resize(threaded_regions);
-
-            int i = 0, len = output::h / threaded_regions;
-
-            for (worker_thread_t& wt : threads) {
-                wt.start = (i++) * len;
-                wt.len = len;
-                wt.thr = new std::thread(codec_region, &wt);
-                wt.thr->detach();
-            }
 
             buf.resize(width * height);
 
@@ -195,7 +162,9 @@ namespace ntsc {
         }
     }
 
-    void init(void* buf, size_t width, size_t height, bool ntsc_encoded = false, int threads = DEFAULT_THREADS) {
+    double sin_table[360], cos_table[360];
+
+    void init(void* buf, size_t width, size_t height, bool ntsc_encoded = false) {
         input::buf  = buf;
         input::w    = width;
         input::h    = height;
@@ -205,13 +174,16 @@ namespace ntsc {
         output::h    = input::h;
         output::size = input::size;
 
-        output::buf.resize(output::size);
+        for (double t = 0; t < 360; t++) {
+            sin_table[(int)t] = std::sin(t * PI180);
+            cos_table[(int)t] = std::cos(t * PI180);
+        }
 
-        threaded_regions = threads;
+        //output::buf.resize(output::size);
 
-        line.resize(output::w);
-        luma.resize(output::w);
-        chroma.resize(output::w);
+        //line.resize(output::w);
+        //luma.resize(output::w);
+        //chroma.resize(output::w);
 
         encoded = ntsc_encoded;
     }
@@ -254,28 +226,30 @@ namespace ntsc {
         return c;
     }
 
-    void codec_region(worker_thread_t* info) {
-        begin:
-
-        for (info->py = info->start; info->py < (info->start + info->len); info->py++) {
+    void codec_region(int ps, int l) {
+        for (int py = ps; py < (ps + l); py++) {
+            double phase = 0, saturation = 0;
             // Generate raw NTSC signal
             for (int px = 0; px < input::w; px++) {
-                auto c = rgb_to_ntsc(input::get(px, info->py));
+                auto c = rgb_to_ntsc(input::get(px, py));
                 double t = NTSC_ENCODER_FREQUENCY * px;
 
                 // Chroma components are encoded as carrier wave phase and amplitude
-                double subcarrier = std::sin((c.p + t) * PI180) * c.s;
+                if (!(px % 6)) {
+                    phase = c.p;
+                    saturation = c.s;
+                }
 
                 // Luma is added to the carrier wave as a DC offset
                 luma[px] = c.y;
-                chroma[px] = subcarrier;
+                chroma[px] = std::sin((phase + t) * PI180) * saturation;
             }
-            
-            //#pragma omp parallel for
+
             for (int px = 0; px < input::w; px++) {
                 double y  = 0, i  = 0, q  = 0,
-                                ci = 0, cq = 0;
+                               ci = 0, cq = 0;
 
+                #pragma omp parallel for
                 for (int d = -2; d < 2; d++) {
                     size_t dx = std::clamp(px + d, 0, (int)input::w);
 
@@ -284,7 +258,7 @@ namespace ntsc {
                     if (!l) continue;
 
                     double phase = (px + d) * TAU4,
-                            luma_phase = phase + frames_rendered * 3 + info->py * 1.2;
+                           luma_phase = phase + frames_rendered * 3 + py * 1.2;
 
                     ci += c * std::cos(phase);
                     cq += c * std::sin(phase);
@@ -309,25 +283,16 @@ namespace ntsc {
             }
 
             for (int i = 0; i < output::w; i++)
-                output::draw(i, info->py, line[i]);
+                output::draw(i, py, line[i]);
         }
-
-        while (!info->restart) {}
-
-        info->restart = false;
-
-        goto begin;
     }
 
     void codec() {
         if (prescale)
             prescaler::update();
 
-        for (worker_thread_t& wt : threads) {
-            wt.restart = true;
-        }
+        codec_region(0, output::h);
 
         frames_rendered++;
-
     }
 }
