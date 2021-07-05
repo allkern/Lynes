@@ -227,6 +227,7 @@ namespace ntsc {
     }
 
     void codec_region(int ps, int l) {
+        //#pragma omp parallel for
         for (int py = ps; py < (ps + l); py++) {
             double phase = 0, saturation = 0;
             // Generate raw NTSC signal
@@ -245,11 +246,11 @@ namespace ntsc {
                 chroma[px] = std::sin((phase + t) * PI180) * saturation;
             }
 
+            //#pragma omp parallel for
             for (int px = 0; px < input::w; px++) {
                 double y  = 0, i  = 0, q  = 0,
                                ci = 0, cq = 0;
 
-                #pragma omp parallel for
                 for (int d = -2; d < 2; d++) {
                     size_t dx = std::clamp(px + d, 0, (int)input::w);
 

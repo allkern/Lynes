@@ -67,7 +67,6 @@ namespace nes {
                 prg_rom_bank_t prgb;
                 chr_mem_bank_t chrb;
 
-
                 while (header->prg_rom_size--) {
                     f->read((char*)prgb.data(), 0x4000);
 

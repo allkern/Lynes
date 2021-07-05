@@ -98,7 +98,6 @@ namespace frontend {
 
                 ntsc::init(ppu::frame.get_buffer(), width, height);
 
-
                 if (prescale > 1) {
                     ntsc::prescaler::init(prescale);
 

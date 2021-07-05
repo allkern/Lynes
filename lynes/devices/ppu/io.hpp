@@ -48,6 +48,11 @@ namespace nes {
                 return;
             }
 
+            if (addr == 0x2000) {
+                // if (value & BGPTADDR)
+                //     _log(debug, "changing pattern table base to %04x", 0x1000 * ((value >> 4) & 0x1));
+            }
+
             r[addr & 0x7] = value;
         }
 
