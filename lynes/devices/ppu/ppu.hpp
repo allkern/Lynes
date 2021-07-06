@@ -35,6 +35,7 @@ namespace nes {
 
         void render_sprites() {
             int i = 0;
+            int height = TEST_REG(PPUCTRL, SPRISIZE) ? 16 : 8;
 
             while (i < 0x100) {
                 u8 y = oam.at(i++),
@@ -46,11 +47,22 @@ namespace nes {
 
                 int pal = a & 0x3;
                    
-                for (int fy = 0; fy < 0x8; fy++) {
-                    int fyr = (a & 0x80) ? (7 - fy) : fy;
+                for (int fy = 0; fy < height; fy++) {
+                    int fyr = (a & 0x80) ? ((height - 1) - fy) : fy;
 
-                    u8 l = cart::read((TEST_REG(PPUCTRL, SPPTADDR) ? 0x1000 : 0) + ((t << 4) | fyr), true),
-                       h = cart::read((TEST_REG(PPUCTRL, SPPTADDR) ? 0x1000 : 0) + ((t << 4) | 0x8 | fyr), true);
+                    u8 h, l;
+
+                    if (TEST_REG(PPUCTRL, SPRISIZE)) {
+                        u16 off = (t & 0x1) ? 0x1000 : 0x0;
+
+                        u16 addr = off | ((t + ((fy & 0x8) ? 1 : 0)) << 4) | (fy & 0x7);
+
+                        l = cart::read(addr, true);
+                        h = cart::read(addr | 0x8, true);
+                    } else {
+                        l = cart::read((TEST_REG(PPUCTRL, SPPTADDR) ? 0x1000 : 0) + ((t << 4) | fyr), true),
+                        h = cart::read((TEST_REG(PPUCTRL, SPPTADDR) ? 0x1000 : 0) + ((t << 4) | 0x8 | fyr), true);
+                    }
 
                     for (int fx = 0; fx < 0x8; fx++) {
                         u16 mask = (a & 0x40) ? (0x0101 << fx) : (0x8080 >> fx);

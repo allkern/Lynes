@@ -15,6 +15,8 @@
 #include "mappers/uxrom.hpp"
 #include "mappers/axrom.hpp"
 
+//#include "../scheduler.hpp"
+
 #define CART_BEGIN 0x4020
 #define CART_END   0xffff
 
@@ -45,27 +47,6 @@ namespace nes {
                 case 0x04: mapper = new mmc3(&f, &header); break;
                 case 0x07: mapper = new axrom(&f, &header); break;
             }
-
-            // if (mapper_number == 0x4) {
-            //     //_log(debug, "readtest0 addr=%04x, return=%02x", 0x0000, mapper->read(0x0000, true));
-            //     //_log(debug, "readtest1 addr=%04x, return=%02x", 0x03ff, mapper->read(0x03ff, true));
-            //     //_log(debug, "readtest2 addr=%04x, return=%02x", 0x0400, mapper->read(0x0400, true));
-            //     //_log(debug, "readtest3 addr=%04x, return=%02x", 0x07ff, mapper->read(0x07ff, true));
-            //     //_log(debug, "readtest4 addr=%04x, return=%02x", 0x0800, mapper->read(0x0800, true));
-            //     //_log(debug, "readtest5 addr=%04x, return=%02x", 0x0bff, mapper->read(0x0bff, true));
-            //     //_log(debug, "readtest6 addr=%04x, return=%02x", 0x0c00, mapper->read(0x0c00, true));
-            //     //_log(debug, "readtest7 addr=%04x, return=%02x", 0x0fff, mapper->read(0x0fff, true));
-            //     mapper->read(0x1000, true);
-            //     mapper->read(0x13ff, true);
-            //     mapper->read(0x1400, true);
-            //     mapper->read(0x17ff, true);
-            //     mapper->read(0x1800, true);
-            //     mapper->read(0x1bff, true);
-            //     mapper->read(0x1c00, true);
-            //     mapper->read(0x1fff, true);
-            // }
-
-            // std::exit(1);
 
             _log(debug, "mapper=%02x, magic=%.3s, prg_rom_size=%u (%u), chr_rom_size=%u (%u), flags={%02x, %02x, %02x, %02x, %02x}",
                 mapper_number,

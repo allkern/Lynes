@@ -19,6 +19,7 @@
 #define VADDRINC 0b00000100
 #define SPPTADDR 0b00001000
 #define BGPTADDR 0b00010000
+#define SPRISIZE 0b00100000
 #define VBLKNMIE 0b10000000
 
 namespace nes {

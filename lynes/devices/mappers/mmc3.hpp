@@ -131,7 +131,7 @@ namespace nes {
 
             void write(u16 addr, u8 value, bool ppu) override {
                 if (!ppu) {
-                    if (IN_RANGE(0x6000, 0x7fff)) { prg_ram.at(addr - 0x6000) = value; return;}
+                    if (IN_RANGE(0x6000, 0x7fff)) { prg_ram.at(addr - 0x6000) = value; return; }
                     if (IN_RANGE(0x8000, 0x9fff)) {
                         if (addr & 0x1) {
                             r[bank_select & 0x7] = value;
@@ -150,6 +150,20 @@ namespace nes {
 
                         return;
                     }
+                    // if (IN_RANGE(0xc000, 0xdfff)) {
+                    //     if (addr & 0x1) {
+                    //         irq_counter = irq_latch;
+                    //     } else {
+                    //         irq_latch = value;
+                    //     }
+
+                    //     return;
+                    // }
+                    // if (IN_RANGE(0xe000, 0xffff)) {
+                    //     irq_enable = (addr & 0x1);
+
+                    //     return;
+                    // }
                 } else {
 
                 }
