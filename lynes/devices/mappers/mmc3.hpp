@@ -36,6 +36,9 @@ namespace nes {
             u8 bank_select = 0x0;
 
             int r[8] = { 0x0 };
+            
+            bool prg_ram_enabled = true,
+                 prg_ram_write_protect = false;
 
             mmc3(std::ifstream* f, header_t* header) {
                 hdr = header;
@@ -82,6 +85,9 @@ namespace nes {
 
             u8 read(u16 addr, bool ppu) override {
                 if (!ppu) {
+                    if (IN_RANGE(0x6000, 0x7fff)) {
+                        return prg_ram_enabled ? prg_ram.at(addr - 0x6000) : 0xff;
+                    }
                     if (IN_RANGE(0x8000, 0x9fff)) {
                         return prg_rom.at((bank_select & 0x40) ? (prg_rom.size() - 2) : r[6]).at(addr - 0x8000);
                     }
@@ -103,10 +109,8 @@ namespace nes {
 
                                 return chr_rom.at(bank).at(addr);
                             } else {
-                                if (IN_RANGE(0x0000, 0x03ff)) { return chr_rom.at(r[2]).at(addr & 0x3ff); }
-                                if (IN_RANGE(0x0400, 0x07ff)) { return chr_rom.at(r[3]).at(addr & 0x3ff); }
-                                if (IN_RANGE(0x0800, 0x0bff)) { return chr_rom.at(r[4]).at(addr & 0x3ff); }
-                                if (IN_RANGE(0x0c00, 0x0fff)) { return chr_rom.at(r[5]).at(addr & 0x3ff); }
+                                // Select bank register based on address
+                                return chr_rom.at(r[((addr >> 10) & 0xc) + 2].at(addr & 0x3ff);
                             }
                         } else {
                             if (addr <= 0xfff) {
@@ -117,10 +121,7 @@ namespace nes {
 
                                 return chr_rom.at(bank).at(addr);
                             } else {
-                                if (IN_RANGE(0x1000, 0x13ff)) { return chr_rom.at(r[2]).at(addr & 0x3ff); }
-                                if (IN_RANGE(0x1400, 0x17ff)) { return chr_rom.at(r[3]).at(addr & 0x3ff); }
-                                if (IN_RANGE(0x1800, 0x1bff)) { return chr_rom.at(r[4]).at(addr & 0x3ff); }
-                                if (IN_RANGE(0x1c00, 0x1fff)) { return chr_rom.at(r[5]).at(addr & 0x3ff); }
+                                return chr_rom.at(r[((addr >> 10) & 0xc) + 2].at(addr & 0x3ff);
                             }
                         }
                     }
@@ -131,7 +132,11 @@ namespace nes {
 
             void write(u16 addr, u8 value, bool ppu) override {
                 if (!ppu) {
-                    if (IN_RANGE(0x6000, 0x7fff)) { prg_ram.at(addr - 0x6000) = value; return; }
+                    if (IN_RANGE(0x6000, 0x7fff)) {
+                        if (prg_ram_enabled && !prg_ram_write_protect)
+                            prg_ram.at(addr - 0x6000) = value;
+                        return;
+                    }
                     if (IN_RANGE(0x8000, 0x9fff)) {
                         if (addr & 0x1) {
                             r[bank_select & 0x7] = value;
@@ -143,29 +148,16 @@ namespace nes {
                     }
                     if (IN_RANGE(0xa000, 0xbfff)) {
                         if (addr & 0x1) {
-                            //r[bank_select & 0x7] = value;
+                            prg_ram_enabled = value & 0x80;
+                            prg_ram_write_protect = value & 0x40;
                         } else {
                             mirroring = value & 0x1;
                         }
 
                         return;
                     }
-                    // if (IN_RANGE(0xc000, 0xdfff)) {
-                    //     if (addr & 0x1) {
-                    //         irq_counter = irq_latch;
-                    //     } else {
-                    //         irq_latch = value;
-                    //     }
 
-                    //     return;
-                    // }
-                    // if (IN_RANGE(0xe000, 0xffff)) {
-                    //     irq_enable = (addr & 0x1);
-
-                    //     return;
-                    // }
-                } else {
-
+                    // To-do: Implement MMC3 IRQ logic here
                 }
             }
         };
