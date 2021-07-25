@@ -47,12 +47,10 @@ namespace nes {
                 prg_rom_bank_t prgb;
                 chr_rom_bank_t chrb;
 
-                _log(debug, "mmc3 PRG ROM size=%u, CHR ROM size=%u", header->prg_rom_size, header->chr_rom_size);
-
                 // MMC3 PRG ROM banks are 8 KiB chunks each
-                header->prg_rom_size *= 2;
+                int prg_rom_size = header->prg_rom_size * 2;
 
-                while (header->prg_rom_size--) {
+                while (prg_rom_size--) {
                     f->read((char*)prgb.data(), 0x2000);
 
                     prg_rom.push_back(prgb);
@@ -61,18 +59,15 @@ namespace nes {
                 }
 
                 // MMC3 CHR ROM banks are 1 KiB chunks each
-                header->chr_rom_size *= 8;
+                int chr_rom_size = header->chr_rom_size * 8;
 
-                while (header->chr_rom_size--) {
+                while (chr_rom_size--) {
                     f->read((char*)chrb.data(), 0x400);
 
                     chr_rom.push_back(chrb);
 
                     chrb.fill(0);
                 }
-
-                r[0] = 0x0;
-                r[1] = 0x2;
             }
 
             u16 translate_ciram_address(u16 addr) override {
@@ -110,7 +105,7 @@ namespace nes {
                                 return chr_rom.at(bank).at(addr);
                             } else {
                                 // Select bank register based on address
-                                return chr_rom.at(r[((addr >> 10) & 0xc) + 2].at(addr & 0x3ff);
+                                return chr_rom.at(r[((addr >> 10) & 0x3) + 2].at(addr & 0x3ff);
                             }
                         } else {
                             if (addr <= 0xfff) {
@@ -121,7 +116,7 @@ namespace nes {
 
                                 return chr_rom.at(bank).at(addr);
                             } else {
-                                return chr_rom.at(r[((addr >> 10) & 0xc) + 2].at(addr & 0x3ff);
+                                return chr_rom.at(r[((addr >> 10) & 0x3) + 2].at(addr & 0x3ff);
                             }
                         }
                     }
