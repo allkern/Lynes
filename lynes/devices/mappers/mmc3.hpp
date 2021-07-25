@@ -97,24 +97,18 @@ namespace nes {
                     if (IN_RANGE(0x0000, 0x1fff)) {
                         if (bank_select & 0x80) {
                             if (addr >= 0x1000) {
-                                u8 br = (addr >> 11) & 0x1,
-                                   bank = (r[br] & 0xfe) | ((addr >> 10) & 0x1);
+                                u8 bank = (r[(addr >> 11) & 0x1] & 0xfe) | ((addr >> 10) & 0x1);
 
-                                addr &= 0x3ff;
-
-                                return chr_rom.at(bank).at(addr);
+                                return chr_rom.at(bank).at(addr & 0x3ff);
                             } else {
                                 // Select bank register based on address
                                 return chr_rom.at(r[((addr >> 10) & 0x3) + 2].at(addr & 0x3ff);
                             }
                         } else {
                             if (addr <= 0xfff) {
-                                u8 br = (addr >> 11) & 0x1,
-                                   bank = (r[br] & 0xfe) | ((addr >> 10) & 0x1);
+                                u8 bank = (r[(addr >> 11) & 0x1] & 0xfe) | ((addr >> 10) & 0x1);
 
-                                addr &= 0x3ff;
-
-                                return chr_rom.at(bank).at(addr);
+                                return chr_rom.at(bank).at(addr & 0x3ff);
                             } else {
                                 return chr_rom.at(r[((addr >> 10) & 0x3) + 2].at(addr & 0x3ff);
                             }
