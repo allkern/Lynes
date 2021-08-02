@@ -6,9 +6,7 @@
 An experimental NES emulator written in C++
 
 ## Current state
-Some NROM (mapper 0) and MMC1 (mapper 1) games are playable.
-
-This is a non-exhaustive list of playable games:
+Useable. This is a non-exhaustive list of playable games:
 - Super Mario Bros.
 - Tetris
 - Dr. Mario
@@ -27,9 +25,7 @@ The PPU is in an OK spot. This is what's currently implemented:
 - Background rendering with Color
 - Sprites
 - Interrupts __*__
-
-What's to be implemented soon:
-- Nametable mirroring
+- Mapper and PPU handled mirroring
  
 **Interrupts are based on a scheduler, not on actual PPU operation*
 
@@ -39,8 +35,11 @@ The APU hasn't been implemented yet
 ### Cartridge support
 List of implemented mappers:
 - NROM (`NES-NROM-128-NN`, `NES-NROM-256-NN`)
-- MMC1 (SEROM)
+- MMC1 (SXROM)
+- MMC3 (TXROM)
+- AxROM
+- UxROM
 
 ### Input devices
 Input is supported, devices implemented:
-- NES Standard Controller
+- NES Standard Controller (1 controller)
