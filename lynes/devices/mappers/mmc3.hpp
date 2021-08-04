@@ -102,7 +102,7 @@ namespace nes {
                                 return chr_rom.at(bank).at(addr & 0x3ff);
                             } else {
                                 // Select bank register based on address
-                                return chr_rom.at(r[((addr >> 10) & 0x3) + 2].at(addr & 0x3ff);
+                                return chr_rom.at(r[((addr >> 10) & 0x3) + 2]).at(addr & 0x3ff);
                             }
                         } else {
                             if (addr <= 0xfff) {
@@ -110,7 +110,7 @@ namespace nes {
 
                                 return chr_rom.at(bank).at(addr & 0x3ff);
                             } else {
-                                return chr_rom.at(r[((addr >> 10) & 0x3) + 2].at(addr & 0x3ff);
+                                return chr_rom.at(r[((addr >> 10) & 0x3) + 2]).at(addr & 0x3ff);
                             }
                         }
                     }
