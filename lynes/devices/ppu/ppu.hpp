@@ -18,8 +18,60 @@ namespace nes {
 
         frame_ready_callback_t frame_ready_cb = nullptr;
 
+        enum Action {
+            Nop = 0,
+            SkipOnOdd,
+            LoadNT,
+            LoadAT,
+            FakeNT,
+            LoadLowBG,
+            LoadHighBGAndIncH,
+            LoadHighBGAndIncV,
+            AssignH,
+            AssignV,
+            SetVBlank,
+            ClearFlags
+        };
+
+        using Table = std::array<std::array<Action, 341>, 262>;
+        // TODO: make the whole thing constexpr
+        Table transitions = { Nop };
+
+        void fill_line(size_t line) {
+            for (size_t cycle = 2; cycle <= 256;) {
+                transitions[line][cycle] = Action::LoadNT;            cycle += 2;
+                transitions[line][cycle] = Action::LoadAT;            cycle += 2;
+                transitions[line][cycle] = Action::LoadLowBG;         cycle += 2;
+                transitions[line][cycle] = Action::LoadHighBGAndIncH; cycle += 2;
+            }
+
+            transitions[line][256] = Action::LoadHighBGAndIncV;
+            transitions[line][257] = Action::AssignH;
+
+            transitions[line][330] = transitions[line][322] = Action::LoadNT;
+            transitions[line][332] = transitions[line][324] = Action::LoadAT;
+            transitions[line][334] = transitions[line][326] = Action::LoadLowBG;
+            transitions[line][336] = transitions[line][328] = Action::LoadHighBGAndIncH;
+
+            // TODO: is this even necessary?
+            transitions[line][338] = transitions[line][340] = Action::FakeNT;
+        }
+
         void init(frame_ready_callback_t fr) {
             frame_ready_cb = fr;
+
+            transitions[0][0] = Action::SkipOnOdd;
+
+            for (size_t line = 0; line <= 239; line++)
+                fill_line(line);
+
+            transitions[241][1] = Action::SetVBlank;
+            transitions[261][1] = Action::ClearFlags;
+
+            fill_line(261);
+
+            for (size_t cycle = 280; cycle <= 304; cycle++)
+                transitions[261][cycle] = Action::AssignV;
         }
 
         void reset() {
