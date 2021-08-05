@@ -33,45 +33,52 @@ namespace nes {
             ClearFlags
         };
 
-        using Table = std::array<std::array<Action, 341>, 262>;
-        // TODO: make the whole thing constexpr
-        Table transitions = { Nop };
+        constexpr int LINE_COUNT = 262;
+        constexpr int CYCLE_COUNT = 341;
 
-        void fill_line(size_t line) {
+        using Table = std::array<std::array<Action, CYCLE_COUNT>, LINE_COUNT>;
+        // TODO: make the whole thing constexpr
+        Table op_table = { Nop };
+
+        void init_line(size_t line) {
             for (size_t cycle = 2; cycle <= 256;) {
-                transitions[line][cycle] = Action::LoadNT;            cycle += 2;
-                transitions[line][cycle] = Action::LoadAT;            cycle += 2;
-                transitions[line][cycle] = Action::LoadLowBG;         cycle += 2;
-                transitions[line][cycle] = Action::LoadHighBGAndIncH; cycle += 2;
+                op_table[line][cycle] = Action::LoadNT;            cycle += 2;
+                op_table[line][cycle] = Action::LoadAT;            cycle += 2;
+                op_table[line][cycle] = Action::LoadLowBG;         cycle += 2;
+                op_table[line][cycle] = Action::LoadHighBGAndIncH; cycle += 2;
             }
 
-            transitions[line][256] = Action::LoadHighBGAndIncV;
-            transitions[line][257] = Action::AssignH;
+            op_table[line][256] = Action::LoadHighBGAndIncV;
+            op_table[line][257] = Action::AssignH;
 
-            transitions[line][330] = transitions[line][322] = Action::LoadNT;
-            transitions[line][332] = transitions[line][324] = Action::LoadAT;
-            transitions[line][334] = transitions[line][326] = Action::LoadLowBG;
-            transitions[line][336] = transitions[line][328] = Action::LoadHighBGAndIncH;
+            op_table[line][330] = op_table[line][322] = Action::LoadNT;
+            op_table[line][332] = op_table[line][324] = Action::LoadAT;
+            op_table[line][334] = op_table[line][326] = Action::LoadLowBG;
+            op_table[line][336] = op_table[line][328] = Action::LoadHighBGAndIncH;
 
             // TODO: is this even necessary?
-            transitions[line][338] = transitions[line][340] = Action::FakeNT;
+            op_table[line][338] = op_table[line][340] = Action::FakeNT;
+        }
+
+        void init_state_machine() {
+            op_table[0][0] = Action::SkipOnOdd;
+
+            for (size_t line = 0; line <= 239; line++)
+                init_line(line);
+
+            op_table[241][1] = Action::SetVBlank;
+            op_table[261][1] = Action::ClearFlags;
+
+            init_line(261);
+
+            for (size_t cycle = 280; cycle <= 304; cycle++)
+                op_table[261][cycle] = Action::AssignV;
         }
 
         void init(frame_ready_callback_t fr) {
             frame_ready_cb = fr;
-
-            transitions[0][0] = Action::SkipOnOdd;
-
-            for (size_t line = 0; line <= 239; line++)
-                fill_line(line);
-
-            transitions[241][1] = Action::SetVBlank;
-            transitions[261][1] = Action::ClearFlags;
-
-            fill_line(261);
-
-            for (size_t cycle = 280; cycle <= 304; cycle++)
-                transitions[261][cycle] = Action::AssignV;
+            line_counter = cycle_counter = 0;
+            init_state_machine();
         }
 
         void reset() {
