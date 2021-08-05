@@ -18,6 +18,8 @@ namespace nes {
 
         frame_ready_callback_t frame_ready_cb = nullptr;
 
+        size_t line_counter, cycle_counter;
+
         enum Action {
             Nop = 0,
             SkipOnOdd,
@@ -179,6 +181,22 @@ namespace nes {
                     }
 
                     frame.draw(x, y, color);
+                }
+            }
+        }
+
+        void cycle(size_t cycles) {
+            for (size_t i = 0; i < cycles; i++) {
+                cycle_counter++;
+                if (cycle_counter == CYCLE_COUNT) {
+                    cycle_counter = 0;
+                    line_counter++;
+                    if (line_counter == LINE_COUNT)
+                        line_counter = 0;
+                }
+
+                switch (op_table[line_counter][cycle_counter]) {
+                    // TODO: populate
                 }
             }
         }
