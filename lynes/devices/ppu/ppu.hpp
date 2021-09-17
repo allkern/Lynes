@@ -18,8 +18,69 @@ namespace nes {
 
         frame_ready_callback_t frame_ready_cb = nullptr;
 
+        size_t line_counter, cycle_counter;
+
+        enum Action {
+            Nop = 0,
+            SkipOnOdd,
+            LoadNT,
+            LoadAT,
+            FakeNT,
+            LoadLowBG,
+            LoadHighBGAndIncH,
+            LoadHighBGAndIncV,
+            AssignH,
+            AssignV,
+            SetVBlank,
+            ClearFlags
+        };
+
+        constexpr int LINE_COUNT = 262;
+        constexpr int CYCLE_COUNT = 341;
+
+        using Table = std::array<std::array<Action, CYCLE_COUNT>, LINE_COUNT>;
+        // TODO: make the whole thing constexpr
+        Table op_table = { Nop };
+
+        void init_line(size_t line) {
+            for (size_t cycle = 2; cycle <= 256;) {
+                op_table[line][cycle] = Action::LoadNT;            cycle += 2;
+                op_table[line][cycle] = Action::LoadAT;            cycle += 2;
+                op_table[line][cycle] = Action::LoadLowBG;         cycle += 2;
+                op_table[line][cycle] = Action::LoadHighBGAndIncH; cycle += 2;
+            }
+
+            op_table[line][256] = Action::LoadHighBGAndIncV;
+            op_table[line][257] = Action::AssignH;
+
+            op_table[line][330] = op_table[line][322] = Action::LoadNT;
+            op_table[line][332] = op_table[line][324] = Action::LoadAT;
+            op_table[line][334] = op_table[line][326] = Action::LoadLowBG;
+            op_table[line][336] = op_table[line][328] = Action::LoadHighBGAndIncH;
+
+            // TODO: is this even necessary?
+            op_table[line][338] = op_table[line][340] = Action::FakeNT;
+        }
+
+        void init_state_machine() {
+            op_table[0][0] = Action::SkipOnOdd;
+
+            for (size_t line = 0; line <= 239; line++)
+                init_line(line);
+
+            op_table[241][1] = Action::SetVBlank;
+            op_table[261][1] = Action::ClearFlags;
+
+            init_line(261);
+
+            for (size_t cycle = 280; cycle <= 304; cycle++)
+                op_table[261][cycle] = Action::AssignV;
+        }
+
         void init(frame_ready_callback_t fr) {
             frame_ready_cb = fr;
+            line_counter = cycle_counter = 0;
+            init_state_machine();
         }
 
         void reset() {
@@ -120,6 +181,22 @@ namespace nes {
                     }
 
                     frame.draw(x, y, color);
+                }
+            }
+        }
+
+        void cycle(size_t cycles) {
+            for (size_t i = 0; i < cycles; i++) {
+                cycle_counter++;
+                if (cycle_counter == CYCLE_COUNT) {
+                    cycle_counter = 0;
+                    line_counter++;
+                    if (line_counter == LINE_COUNT)
+                        line_counter = 0;
+                }
+
+                switch (op_table[line_counter][cycle_counter]) {
+                    // TODO: populate
                 }
             }
         }

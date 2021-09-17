@@ -60,6 +60,7 @@ int main(int argc, char* argv[]) {
 #ifndef LYNES_TEST_MODE
     while (window::is_open()) {
         cpu::cycle();
+        ppu::cycle(cpu::last_cycles * 3);
         scheduler::update();
     }
 #endif
